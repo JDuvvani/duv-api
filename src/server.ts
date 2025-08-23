@@ -4,11 +4,14 @@ import { Server } from "http";
 import logger from "@/utils/logger";
 import env from "@/config/env";
 import app from "@/app";
+import { connectDB, disconnectDB } from "@/config/db";
 
 let server: Server;
 
 const startServer = async () => {
   try {
+    await connectDB();
+
     server = app.listen(env.PORT, () => {
       logger.info(`Server running on port ${env.PORT}`);
     });
@@ -25,10 +28,12 @@ const shutdown = async (exitCode: number) => {
       await new Promise<void>((resolve) => server.close(() => resolve()));
       logger.info("Server closed");
     }
+
+    await disconnectDB();
+    process.exit(exitCode);
   } catch (err) {
     logger.error(err, "Error during shutdown:");
-  } finally {
-    process.exit(exitCode);
+    process.exit(1);
   }
 };
 
